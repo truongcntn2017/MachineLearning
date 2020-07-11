@@ -88,8 +88,8 @@ class Power(BinaryOperation):
         return np.power(a, b)
 
     def backward(self, upstream_grad):
-        raise NotImplementedError
-
+        output = [self.input_nodes[0].output, self.input_nodes[1].output]
+        return np.power(output[0], output[1]-1)*upstream_grad
 
 class Operator(Operation):
   def __init__(self, a):
@@ -107,31 +107,32 @@ class sigmoid(Operator):
         return 1 / (1 + np.exp(-a))
 
     def backward(self, upstream_grad):
-        raise NotImplementedError
+        return [upstream_grad*((1 - 1/ (1 + np.exp(- self.output)))/(1 + np.exp(- self.output)))]
 
 class sin(Operator):
     def forward(self, a):
         return np.sin(a)
     
-    def backward(self):
-        raise NotImplementedError
+    def backward(self, upstream_grad):
+        output = [self.input_nodes[0].output]
+        return [np.cos(output[0])*upstream_grad]
+
 
 class cos(Operator):
     def forward(self, a):
         return np.cos(a)
     
-    def backward(self):
-        raise NotImplementedError
+    def backward(self, upstream_grad):
+        output = [self.input_nodes[0].output]
+        return [- np.sin(output[0])*upstream_grad]
 
 class tan(Operator):
-    def __init__(self, x):
-        super.__init__([x])
-
     def forward(self, a):
         return np.tan(a)
-    
-    def backward(self):
-        raise NotImplementedError
+
+    def backward(self, upstream_grad):
+        output = [self.input_nodes[0].output]
+        return [1/np.power(np.cos(output[0]), 2)*upstream_grad]
 
 
 class Placeholder():
@@ -201,6 +202,7 @@ class Session():
         res.append(node.output)
       else:
         upstream_grad_list = node.backward(upstream_grad)
+        # print(upstream_grad_list)
         for i in range(len(node.input_nodes)):
             recursive_helper_backward(node.input_nodes[i], upstream_grad_list[i])
 
